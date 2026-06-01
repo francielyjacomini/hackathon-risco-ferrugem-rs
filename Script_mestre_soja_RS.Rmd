@@ -1,0 +1,140 @@
+---
+title: "Análise Soja RS - Base Cenários"
+output: html_document
+date: "2026-06-01"
+---
+
+```{r}
+# ==============================================================================
+# SCRIPT MESTRE: PREPARAÇÃO DA BASE DE CENÁRIOS DE FERRUGEM ASIÁTICA (RS)
+# ==============================================================================
+
+# 0. PACOTES NECESSÁRIOS
+library(tidyverse)
+library(sidrar)
+library(lubridate)
+library(writexl)
+library(nasapower) # Para o clima
+library(geobr)     # Para os mapas
+library(sf)        # Para as coordenadas
+
+# ==============================================================================
+# 1. EXTRAÇÃO E LIMPEZA DOS DADOS DE PRODUÇÃO (IBGE / SIDRA)
+# ==============================================================================
+message("Iniciando extração de dados do IBGE (PAM - Tabela 5457)...")
+
+producao_bruta <- get_sidra(
+  x = 5457,
+  variable = c(112, 214), 
+  period = c("2019", "2020", "2021", "2022", "2023"), 
+  geo = "City",
+  geo.filter = list("State" = 43), 
+  classific = "c782",     
+  category = list(40124)  
+)
+
+indicadores_producao <- producao_bruta %>%
+  select(
+    codigo_ibge = `Município (Código)`,
+    municipio = `Município`,
+    ano = `Ano`,          # <-- AQUI ESTÁ A SALVAÇÃO! A coluna Ano voltou.
+    variavel = `Variável`,
+    valor = `Valor`
+  ) %>%
+  pivot_wider(names_from = variavel, values_from = valor) %>%
+  rename(
+    rendimento_kgha = `Rendimento médio da produção`,
+    producao_ton = `Quantidade produzida`
+  ) %>%
+  mutate(
+    # Garantindo que o IBGE não mandou texto disfarçado de número
+    rendimento_kgha = as.numeric(rendimento_kgha),
+    producao_ton = as.numeric(producao_ton),
+    
+    # Agora o coalesce funciona perfeitamente
+    rendimento_kgha = coalesce(rendimento_kgha, 0),
+    producao_ton = coalesce(producao_ton, 0),
+    codigo_ibge = as.character(codigo_ibge) 
+  ) %>%
+  group_by(codigo_ibge, municipio) %>%
+  summarise(
+    producao_media_ton = mean(producao_ton, na.rm = TRUE),
+    produtividade_atingivel_kgha = max(rendimento_kgha, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+message("Dados produtivos consolidados com sucesso!")
+
+# ==============================================================================
+# 2. EXTRAÇÃO GEOGRÁFICA (Pegando as coordenadas do RS)
+# ==============================================================================
+message("Pegando as coordenadas dos municípios do RS para informar à NASA...")
+
+malha_rs <- read_municipality(code_muni = "RS", year = 2022, showProgress = FALSE)
+centroides <- st_centroid(malha_rs)
+coords <- st_coordinates(centroides)
+
+df_coords <- malha_rs %>%
+  st_drop_geometry() %>%
+  select(codigo_ibge = code_muni) %>%
+  mutate(
+    lon = coords[,1], 
+    lat = coords[,2],
+    codigo_ibge = as.character(codigo_ibge)
+  )
+
+# ==============================================================================
+# 3. EXTRAÇÃO CLIMÁTICA (NASA POWER) - JANELA AMPLIADA
+# ==============================================================================
+message("Iniciando download dos dados de chuva da NASA (Novembro a Março)...")
+
+baixar_clima_seguro <- possibly(function(lon, lat, cod) {
+  res <- get_power(
+    community = "ag",
+    lonlat = c(lon, lat),
+    pars = c("PRECTOTCORR"), 
+    dates = c("2024-11-01", "2025-03-31"), 
+    temporal_api = "daily"
+  )
+  res$codigo_ibge <- cod
+  return(res)
+}, otherwise = NULL)
+
+clima_diario <- map_dfr(
+  1:nrow(df_coords), 
+  ~baixar_clima_seguro(df_coords$lon[.x], df_coords$lat[.x], df_coords$codigo_ibge[.x])
+) %>% rename(precipitacao = PRECTOTCORR)
+
+base_completa <- clima_diario %>% inner_join(indicadores_producao, by = "codigo_ibge")
+
+# ==============================================================================
+# 4. PRÉ-CÁLCULO DOS 3 CENÁRIOS DE CHUVA E EXPORTAÇÃO
+# ==============================================================================
+message("Calculando os 3 cenários de plantio...")
+
+base_cenarios <- base_completa %>%
+  mutate(
+    # Adeus ymd_hms! A NASA já entrega a data pronta na coluna YYYYMMDD
+    mes = month(YYYYMMDD)
+  ) %>%
+  group_by(codigo_ibge, municipio) %>%
+  summarise(
+    chuva_cedo = sum(precipitacao[mes %in% c(11, 12, 1)], na.rm = TRUE), 
+    chuva_normal = sum(precipitacao[mes %in% c(12, 1, 2)], na.rm = TRUE), 
+    chuva_tardio = sum(precipitacao[mes %in% c(1, 2, 3)], na.rm = TRUE),  
+    
+    producao_media_ton = first(producao_media_ton),
+    produtividade_atingivel_kgha = first(produtividade_atingivel_kgha),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(producao_media_ton)) %>%
+  mutate(
+    producao_acumulada = cumsum(producao_media_ton),
+    pct_pareto = (producao_acumulada / sum(producao_media_ton, na.rm = TRUE)) * 100
+  )
+
+write_xlsx(base_cenarios, "base_cenarios_rs.xlsx")
+
+message("=== SCRIPT CONCLUÍDO! ===")
+message("Base de cenários gerada! Agora é só abrir o app.R e ver a mágica no Shiny!")
+```
