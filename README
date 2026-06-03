@@ -20,7 +20,7 @@ Para garantir a total reprodutibilidade do projeto, certifique-se de que possui 
 Os seguintes pacotes são necessários e devem ser instalados através do console do R:
 
 ```R
-install.packages(c("tidyverse", "shiny", "sf", "geobr", "leaflet", "DT", "readxl", "bslib", "sidrar", "lubridate", "writexl", "nasapower"))
+install.packages(c("tidyverse", "shiny", "sf", "geobr", "leaflet", "DT", "readxl", "bslib", "sidrar", "lubridate", "writexl", "nasapower", "plotly"))
 ```
 
 ## 🚀 Como Executar e Reproduzir a Análise
