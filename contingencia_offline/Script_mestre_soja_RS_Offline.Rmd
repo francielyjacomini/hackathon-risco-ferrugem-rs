@@ -1,0 +1,80 @@
+---
+title: "Script Mestre Offline"
+output: html_document
+date: "2026-06-03"
+---
+
+```{r}
+# ==============================================================================
+# SCRIPT MESTRE DEFINITIVO - 100% OFFLINE (Hackathon)
+# Processamento de Dados de Risco sem uso de APIs externas
+# ==============================================================================
+
+library(tidyverse)
+library(lubridate)
+library(writexl)
+
+message("1. Iniciando processamento dos dados de PRODUÇÃO (IBGE offline)...")
+
+# ------------------------------------------------------------------------------
+# 1. IBGE: Lê a série histórica e aplica a Regra de Pareto
+# ------------------------------------------------------------------------------
+producao_bruta <- read_delim("soja_rs_serie_historica.csv", delim = ";", show_col_types = FALSE)
+
+indicadores_producao <- producao_bruta %>%
+  mutate(codigo_ibge = as.character(codigo_ibge)) %>%
+  group_by(codigo_ibge, municipio) %>%
+  summarise(
+    producao_media_ton = mean(producao_ton, na.rm = TRUE),
+    produtividade_atingivel_kgha = max(rendimento_kgha, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(producao_media_ton)) %>%
+  mutate(
+    producao_acumulada = cumsum(producao_media_ton),
+    producao_total_rs = sum(producao_media_ton, na.rm = TRUE),
+    pct_pareto = (producao_acumulada / producao_total_rs) * 100
+  ) %>%
+  select(-producao_acumulada, -producao_total_rs)
+
+message("Dados de produção consolidados com sucesso!")
+
+# ==============================================================================
+message("2. Iniciando processamento dos dados CLIMÁTICOS (NASA offline)...")
+
+# ------------------------------------------------------------------------------
+# 2. CLIMA: Lê a base diária, trata a formatação e calcula o acumulado
+# ------------------------------------------------------------------------------
+clima_bruto <- read_delim("dados_climaticos_rs_safra_24_25.csv", delim = ";", show_col_types = FALSE)
+
+dados_climaticos <- clima_bruto %>%
+  mutate(
+    codigo_ibge = as.character(codigo_ibge),
+    # Converte a vírgula do padrão brasileiro para o ponto matemático
+    precipitacao = as.numeric(str_replace_all(precipitacao, ",", ".")),
+    # Identifica de que mês é aquela medição
+    mes = month(as.Date(data))
+  ) %>%
+  group_by(codigo_ibge) %>%
+  summarise(
+    # Acumulando a precipitação para os 3 cenários metodológicos do projeto
+    chuva_cedo = sum(precipitacao[mes %in% c(11, 12, 1)], na.rm = TRUE),
+    chuva_normal = sum(precipitacao[mes %in% c(12, 1, 2)], na.rm = TRUE),
+    chuva_tardio = sum(precipitacao[mes %in% c(1, 2, 3)], na.rm = TRUE),
+    .groups = "drop"
+  )
+
+message("Dados climáticos consolidados com sucesso!")
+
+# ==============================================================================
+message("3. Unindo as bases e gerando o Excel final...")
+
+# Cruza a produção com o clima garantindo que município bata com município
+base_cenarios_rs <- indicadores_producao %>%
+  inner_join(dados_climaticos, by = "codigo_ibge")
+
+write_xlsx(base_cenarios_rs, "base_cenarios_rs.xlsx")
+
+message("Vitória! O arquivo 'base_cenarios_rs.xlsx' foi gerado 100% offline e está pronto!")
+```
+
