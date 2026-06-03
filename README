@@ -1,0 +1,58 @@
+# Simulador Dinâmico de Risco: Ferrugem Asiática da Soja no RS
+
+Este repositório contém o código-fonte e a documentação do projeto submetido ao Hackathon de Risco Agrícola. A solução proposta é um **Simulador Dinâmico em R (Shiny)** que avalia o risco epidemiológico e financeiro da Ferrugem Asiática da Soja (*Phakopsora pachyrhizi*) no estado do Rio Grande do Sul (RS).
+
+Diferente dos mapas estáticos tradicionais, o nosso modelo integra dados de produção e clima em tempo real, permitindo simular o risco com base no **cenário real da época de semeadura** (precoce, normal ou tardia), recalculando a janela crítica de fecho do dossel vegetativo.
+
+## 📂 Estrutura do Projeto
+
+O projeto está dividido em duas componentes principais (Extração de Dados e Aplicação Visual):
+
+* `script_mestre.R`: O motor de extração de dados. Descarrega o histórico de produção (API IBGE/SIDRA), as geometrias espaciais (`geobr`) e a precipitação diária ajustada (API NASA POWER), gerando a base de cenários pré-calculada.
+* `base_cenarios_rs.xlsx`: O arquivo de base de dados gerado pelo script mestre (necessário para alimentar o painel sem sobrecarregar a API em tempo real).
+* `app.R`: A aplicação interativa (Dashboard). Contém a interface do utilizador e o motor matemático que recalcula a equação polinomial de severidade e o *Score de Vulnerabilidade* instantaneamente.
+* `relatorio_tecnico_hackathon.html`: O relatório técnico-científico com a fundamentação metodológica do modelo.
+
+## ⚙️ Pré-requisitos
+
+Para garantir a total reprodutibilidade do projeto, certifique-se de que possui o **R** e o **RStudio** instalados na sua máquina.
+
+Os seguintes pacotes são necessários e devem ser instalados através do console do R:
+
+```R
+install.packages(c("tidyverse", "shiny", "sf", "geobr", "leaflet", "DT", "readxl", "bslib", "sidrar", "lubridate", "writexl", "nasapower"))
+```
+
+## 🚀 Como Executar e Reproduzir a Análise
+
+Siga os passos abaixo para compilar os dados e executar a aplicação:
+
+### Passo 1: Gerar a Base de Dados (Extração)
+1. Abra o arquivo `Script_mestre_soja_RS.Rmd` no RStudio.
+2. Execute todo o código.
+3. **Aviso:** Este script irá acessar a API da NASA para descarregar dados climáticos de 497 municípios. O processo pode demorar alguns minutos dependendo da conexão com a internet.
+4. Ao finalizar, o arquivo `base_cenarios_rs.xlsx` será criado automaticamente na sua pasta de trabalho.
+
+### Passo 2: Iniciar o Dashboard (Painel Interativo)
+1. Certifique-se de que o arquivo `base_cenarios_rs.xlsx` se encontra exatamente na mesma pasta que o arquivo `app.R`.
+2. Abra o arquivo `app.R` no RStudio.
+3. Clique no botão verde **"Run App"** localizado no canto superior direito do painel de edição de scripts.
+4. A aplicação abrirá numa nova janela. Pode interagir com os filtros de *Época de Semeadura*, *Relevância Produtiva* e consultar as métricas de estimativa de perdas diretamente no mapa e na tabela.
+
+## 📊 Metodologia Resumida
+
+A modelação matemática baseia-se na literatura fitopatológica empírica. A severidade da doença é calculada através de uma regressão polinomial quadrática sobre a precipitação acumulada na janela crítica. O **Score de Vulnerabilidade (0 a 100)** é derivado de uma normalização *Min-Max* do produto entre o risco epidemiológico relativo, a perda estimada em kg/ha e a produção média municipal. Para mais detalhes, consulte a aba "Metodologia e Avisos" no próprio aplicativo ou no relatório técnico incluso.
+
+### 🛡️ Plano de Contingência (Modo Offline)
+
+Este projeto foi construído utilizando as melhores práticas de Engenharia de Dados, consumindo informações diretamente das APIs do IBGE (SIDRA) e da NASA (POWER) através do arquivo `script_mestre.R`. 
+
+No entanto, sistemas governamentais públicos e APIs meteorológicas podem apresentar instabilidades, lentidão ou bloqueios de IP (WAF) em momentos de alta requisição. 
+
+**Para garantir a avaliação ininterrupta deste projeto:**
+Disponibilizamos um pipeline 100% resiliente na pasta `contingencia_offline/`. Se você enfrentar erros de conexão (*Request Rejected* ou *Timeouts*) ao rodar o script principal, siga estes passos:
+1. Abra o arquivo `script_mestre_offline.R` localizado dentro da pasta de contingência.
+2. Certifique-se de que os arquivos `.csv` de backup estão no mesmo diretório de trabalho.
+3. Execute o script. Ele processará os dados a partir de um *Data Lake* local (arquivos estáticos), gerando a base do Dashboard em segundos, sem a necessidade de acesso à internet.
+---
+*Projeto desenvolvido para o Hackathon de Risco Agrícola, disciplina de Visualização e Análise de Dados - FIP606 (2026).*
