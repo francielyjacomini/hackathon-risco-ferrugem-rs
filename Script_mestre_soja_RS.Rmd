@@ -1,38 +1,47 @@
 ---
-title: "Análise Soja RS - Base Cenários"
+title: "Script de Extração e Processamento - Simulador Dinâmico de Risco (FAS)"
 output: html_document
-date: "2026-06-01"
+date: "2026-06-03"
 ---
 
-```{r}
+```{r setup, include=FALSE}
 # ==============================================================================
-# SCRIPT MESTRE: PREPARAÇÃO DA BASE DE CENÁRIOS DE FERRUGEM ASIÁTICA (RS)
+# SCRIPT DE PRÉ-PROCESSAMENTO: BASE DE CENÁRIOS DE FERRUGEM ASIÁTICA (RS)
+# Objetivo: Extração automatizada, espacialização e cálculo de janelas
+#           fenológicas críticas para o painel interativo em Shiny.
 # ==============================================================================
 
-# 0. PACOTES NECESSÁRIOS
+# 0. DEPENDÊNCIAS DO PROJETO
 library(tidyverse)
-library(sidrar)
+library(sidrar)    # Extração de dados estatísticos do IBGE
 library(lubridate)
 library(writexl)
-library(nasapower) # Para o clima
-library(geobr)     # Para os mapas
-library(sf)        # Para as coordenadas
+library(nasapower) # Extração de dados climáticos diários
+library(geobr)     # Malhas territoriais oficiais do IPEA
+library(sf)        # Manipulação de dados espaciais
+library(httr)      # Controle de requisições HTTP
 
 # ==============================================================================
-# 1. EXTRAÇÃO E LIMPEZA DOS DADOS DE PRODUÇÃO (IBGE / SIDRA)
+# 1. EXTRAÇÃO E CONSOLIDAÇÃO DOS DADOS PRODUTIVOS (IBGE / SIDRA)
 # ==============================================================================
-message("Iniciando extração de dados do IBGE (PAM - Tabela 5457)...")
+message("Iniciando extração da série histórica do IBGE (PAM - Tabela 5457)...")
 
+# Configuração de User-Agent para contornar bloqueios de WAF (Web Application Firewall) 
+# da API do IBGE durante chamadas automatizadas.
+httr::set_config(httr::user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"))
+
+# Extração de Rendimento e Quantidade Produzida (Soja) referente aos últimos 5 anos
 producao_bruta <- get_sidra(
   x = 5457,
   variable = c(112, 214), 
   period = c("2019", "2020", "2021", "2022", "2023"), 
   geo = "City",
-  geo.filter = list("State" = 43), 
+  geo.filter = list("State" = 43), # Filtro de abrangência: Rio Grande do Sul
   classific = "c782",     
   category = list(40124)  
 )
 
+# Limpeza e determinação da Produtividade Atingível (Ymax) e Produção Média
 indicadores_producao <- producao_bruta %>%
   select(
     codigo_ibge = `Município (Código)`,
@@ -49,7 +58,6 @@ indicadores_producao <- producao_bruta %>%
   mutate(
     rendimento_kgha = as.numeric(rendimento_kgha),
     producao_ton = as.numeric(producao_ton),
-    
     rendimento_kgha = coalesce(rendimento_kgha, 0),
     producao_ton = coalesce(producao_ton, 0),
     codigo_ibge = as.character(codigo_ibge) 
@@ -61,12 +69,12 @@ indicadores_producao <- producao_bruta %>%
     .groups = "drop"
   )
 
-message("Dados produtivos consolidados com sucesso!")
+message("Dados produtivos consolidados com sucesso.")
 
 # ==============================================================================
-# 2. EXTRAÇÃO GEOGRÁFICA (Pegando as coordenadas do RS)
+# 2. ESPACIALIZAÇÃO GEOGRÁFICA (Centróides Municipais)
 # ==============================================================================
-message("Pegando as coordenadas dos municípios do RS para informar à NASA...")
+message("Extraindo coordenadas dos centróides municipais via pacote geobr...")
 
 malha_rs <- read_municipality(code_muni = "RS", year = 2022, showProgress = FALSE)
 centroides <- st_centroid(malha_rs)
@@ -82,10 +90,11 @@ df_coords <- malha_rs %>%
   )
 
 # ==============================================================================
-# 3. EXTRAÇÃO CLIMÁTICA (NASA POWER) - JANELA AMPLIADA
+# 3. EXTRAÇÃO CLIMÁTICA DIÁRIA (API NASA POWER)
 # ==============================================================================
-message("Iniciando download dos dados de chuva da NASA (Novembro a Março)...")
+message("Iniciando requisições à API NASA POWER (Precipitação: Nov/2024 a Mar/2025)...")
 
+# Função encapsulada com 'possibly' para garantir tolerância a falhas de conexão
 baixar_clima_seguro <- possibly(function(lon, lat, cod) {
   res <- get_power(
     community = "ag",
@@ -98,27 +107,37 @@ baixar_clima_seguro <- possibly(function(lon, lat, cod) {
   return(res)
 }, otherwise = NULL)
 
+# Mapeamento iterativo para extração em todos os municípios da malha
 clima_diario <- map_dfr(
   1:nrow(df_coords), 
   ~baixar_clima_seguro(df_coords$lon[.x], df_coords$lat[.x], df_coords$codigo_ibge[.x])
 ) %>% rename(precipitacao = PRECTOTCORR)
 
+# Junção dos dados climáticos espaciais com a base produtiva
 base_completa <- clima_diario %>% inner_join(indicadores_producao, by = "codigo_ibge")
 
 # ==============================================================================
-# 4. PRÉ-CÁLCULO DOS 3 CENÁRIOS DE CHUVA E EXPORTAÇÃO
+# 4. CÁLCULO DAS JANELAS FENOLÓGICAS E REGRAS DE NEGÓCIO
 # ==============================================================================
-message("Calculando os 3 cenários de plantio...")
+message("Processando cenários de precipitação e cálculo do Princípio de Pareto...")
 
 base_cenarios <- base_completa %>%
-  mutate(
-    mes = month(YYYYMMDD)
-  ) %>%
   group_by(codigo_ibge, municipio) %>%
   summarise(
-    chuva_cedo = sum(precipitacao[mes %in% c(11, 12, 1)], na.rm = TRUE), 
-    chuva_normal = sum(precipitacao[mes %in% c(12, 1, 2)], na.rm = TRUE), 
-    chuva_tardio = sum(precipitacao[mes %in% c(1, 2, 3)], na.rm = TRUE),  
+    # Acúmulo pluviométrico restrito à janela crítica de 45 dias pós-fechamento do dossel.
+    # Premissa adotada: O fechamento do dossel ocorre aproximadamente 30 dias após a semeadura.
+    
+    # Cenário de Semeadura Precoce (Estimativa de plantio: 01/Out)
+    # Início do dossel fechado em 01/Nov.
+    chuva_cedo = sum(precipitacao[YYYYMMDD >= as.Date("2024-11-01") & YYYYMMDD <= as.Date("2024-12-15")], na.rm = TRUE),
+    
+    # Cenário de Semeadura Normal (Estimativa de plantio: 01/Nov)
+    # Início do dossel fechado em 01/Dez.
+    chuva_normal = sum(precipitacao[YYYYMMDD >= as.Date("2024-12-01") & YYYYMMDD <= as.Date("2025-01-14")], na.rm = TRUE),
+    
+    # Cenário de Semeadura Tardia (Estimativa de plantio: 01/Dez)
+    # Início do dossel fechado em 31/Dez.
+    chuva_tardio = sum(precipitacao[YYYYMMDD >= as.Date("2024-12-31") & YYYYMMDD <= as.Date("2025-02-13")], na.rm = TRUE),
     
     producao_media_ton = first(producao_media_ton),
     produtividade_atingivel_kgha = first(produtividade_atingivel_kgha),
@@ -126,12 +145,13 @@ base_cenarios <- base_completa %>%
   ) %>%
   arrange(desc(producao_media_ton)) %>%
   mutate(
+    # Cálculo da relevância produtiva acumulada para filtragem no painel (Score de Pareto)
     producao_acumulada = cumsum(producao_media_ton),
     pct_pareto = (producao_acumulada / sum(producao_media_ton, na.rm = TRUE)) * 100
   )
 
+# Exportação da base de dados padronizada para consumo no Dashboard interativo
 write_xlsx(base_cenarios, "base_cenarios_rs.xlsx")
 
-message("=== SCRIPT CONCLUÍDO! ===")
-message("Base de cenários gerada! Agora é só abrir o app.R e ver a mágica no Shiny!")
+message("Processamento concluído com sucesso. Dados exportados em 'base_cenarios_rs.xlsx'.")
 ```

@@ -61,9 +61,7 @@ ui <- page_sidebar(
     hr(),
     
     sliderInput("filtro_pareto", "Relevância Produtiva (Top % do Estado):", min = 10, max = 100, value = 100, step = 5, post = "%"),
-    sliderInput("filtro_score", "Score Mínimo de Vulnerabilidade:", min = 0, max = 100, value = 0, step = 5),
-    
-    helpText("A modelagem matemática de severidade segue a equação empírica oficial.")
+    sliderInput("filtro_score", "Score Mínimo de Vulnerabilidade:", min = 0, max = 100, value = 0, step = 5)
   ),
   
   navset_card_underline(
@@ -86,11 +84,10 @@ ui <- page_sidebar(
       card(
         card_header("Análise Meteorológica Diária"),
         card_body(
-          # NOVA BARRA DE PESQUISA DIRETO NA ABA!
           selectizeInput(
             inputId = "seletor_municipio",
             label = "Selecione ou digite o nome de um município:",
-            choices = NULL, # Será preenchido pelo servidor
+            choices = NULL, 
             width = "100%"
           ),
           plotlyOutput("grafico_linha_tempo", height = "400px")
@@ -102,18 +99,26 @@ ui <- page_sidebar(
       "Metodologia e Avisos",
       card(
         card_header("Como este Simulador Dinâmico Funciona?"),
-        markdown("
-        **1. Fontes de Dados e Reprodutibilidade:**
-        * **Produção:** API do IBGE/SIDRA (Tabela 5457). Produtividade Atingível estabelecida via rendimento máximo de 5 anos.
-        * **Clima:** API da NASA POWER cruzada com malha territorial IPEA/geobr.
-        
-        **2. Engrenagem Matemática:**
-        A estimativa da severidade baseia-se no **modelo empírico de regressão não-linear** ajustado por **Del Ponte et al. (2006, Tabela 3, BR3)**:
-        * `Severidade (%) = -3.3983 + 0.3777(P) - 0.0003(P²)` *(Onde P = precipitação acumulada na janela selecionada).*
-        * O *Score* final de vulnerabilidade aplica normalização estatística *Min-Max* sobre a perda produtiva bruta.
-        
-        **3. Limitações Assumidas:**
-        * O simulador projeta o risco ambiental intrínseco (pior cenário climático), assumindo ausência de controle químico (fungicidas) e adoção de cultivares padrão.
+        HTML("
+        <div style='font-family: inherit; font-size: 0.95rem; line-height: 1.6; padding: 10px;'>
+          <p><strong>1. Fontes de Dados e Reprodutibilidade:</strong></p>
+          <ul>
+            <li><strong>Produção:</strong> API do IBGE/SIDRA (Tabela 5457). Produtividade Atingível estabelecida via rendimento máximo de 5 anos.</li>
+            <li><strong>Clima:</strong> API da NASA POWER cruzada com malha territorial IPEA/geobr.</li>
+          </ul>
+          
+          <p><strong>2. Engrenagem Matemática:</strong><br>
+          A estimativa da severidade baseia-se no <strong>modelo empírico de regressão não-linear</strong> ajustado por <strong>Del Ponte et al. (2006, Tabela 3, BR3)</strong>. A chuva acumulada é restrita à <strong>janela crítica de 45 dias após o fechamento do dossel da cultura</strong>:</p>
+          <ul>
+            <li><span style='font-family: monospace; background-color: #f8f9fa; padding: 2px 6px; border-radius: 4px;'>Severidade (%) = -3.3983 + 0.3777(P) - 0.0003(P²)</span> <br><em>(Onde P = precipitação acumulada nos 45 dias do cenário selecionado).</em></li>
+            <li>O <em>Score</em> final de vulnerabilidade aplica normalização estatística <em>Min-Max</em> sobre a perda produtiva bruta.</li>
+          </ul>
+          
+          <p><strong>3. Limitações Assumidas:</strong></p>
+          <ul>
+            <li>O simulador projeta o risco ambiental intrínseco (pior cenário climático), assumindo ausência de controle químico (fungicidas) e adoção de cultivares padrão.</li>
+          </ul>
+        </div>
         ")
       )
     )
@@ -125,9 +130,6 @@ ui <- page_sidebar(
 # ==============================================================================
 server <- function(input, output, session) {
   
-  # ----------------------------------------------------------------------------
-  # PREENCHE A NOVA BARRA DE PESQUISA COM AS CIDADES DO RS
-  # ----------------------------------------------------------------------------
   observe({
     lista_opcoes <- mapa_dados %>% 
       st_drop_geometry() %>% 
@@ -140,17 +142,11 @@ server <- function(input, output, session) {
     updateSelectizeInput(session, "seletor_municipio", choices = nomes_valores, selected = nomes_valores[1])
   })
   
-  # ----------------------------------------------------------------------------
-  # INTEGRAÇÃO: O CLIQUE NO MAPA ATUALIZA A BARRA DE PESQUISA
-  # ----------------------------------------------------------------------------
   observeEvent(input$mapa_interativo_shape_click, {
     clique <- input$mapa_interativo_shape_click
     updateSelectizeInput(session, "seletor_municipio", selected = clique$id)
   })
   
-  # ----------------------------------------------------------------------------
-  # CÁLCULOS DO MAPA E TABELA
-  # ----------------------------------------------------------------------------
   dados_calculados <- reactive({
     mapa_dados %>%
       mutate(
@@ -201,11 +197,8 @@ server <- function(input, output, session) {
       addLegend(pal = paleta, values = c(0, 100), opacity = 0.7, title = "Vulnerabilidade", position = "bottomright")
   })
   
-  # ----------------------------------------------------------------------------
-  # GRÁFICO DIRECIONADO PELA BARRA DE PESQUISA (QUE É ATUALIZADA PELO MAPA)
-  # ----------------------------------------------------------------------------
   output$grafico_linha_tempo <- renderPlotly({
-    req(input$seletor_municipio) # Garante que só desenha se tiver município selecionado
+    req(input$seletor_municipio) 
     id <- input$seletor_municipio
     
     dados_grafico <- historico_clima %>% filter(codigo_ibge == id)
