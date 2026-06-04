@@ -2317,9 +2317,9 @@ window.Quarto = {
   <li><a href="#metodologia-científica" id="toc-metodologia-científica" class="nav-link" data-scroll-target="#metodologia-científica"><span class="header-section-number">3</span> Metodologia Científica</a>
   <ul class="collapse">
   <li><a href="#modelagem-produtiva-e-regra-de-pareto" id="toc-modelagem-produtiva-e-regra-de-pareto" class="nav-link" data-scroll-target="#modelagem-produtiva-e-regra-de-pareto"><span class="header-section-number">3.1</span> Modelagem Produtiva e Regra de Pareto</a></li>
-  <li><a href="#janelas-críticas-de-semeadura-o-modelo-dinâmico" id="toc-janelas-críticas-de-semeadura-o-modelo-dinâmico" class="nav-link" data-scroll-target="#janelas-críticas-de-semeadura-o-modelo-dinâmico"><span class="header-section-number">3.2</span> Janelas Críticas de Semeadura (O Modelo Dinâmico)</a></li>
-  <li><a href="#estimativa-de-severidade-modelo-empírico" id="toc-estimativa-de-severidade-modelo-empírico" class="nav-link" data-scroll-target="#estimativa-de-severidade-modelo-empírico"><span class="header-section-number">3.3</span> Estimativa de Severidade (Modelo Empírico)</a></li>
-  <li><a href="#estimativa-de-perdas-e-o-score-de-vulnerabilidade" id="toc-estimativa-de-perdas-e-o-score-de-vulnerabilidade" class="nav-link" data-scroll-target="#estimativa-de-perdas-e-o-score-de-vulnerabilidade"><span class="header-section-number">3.4</span> Estimativa de Perdas e O Score de Vulnerabilidade</a></li>
+  <li><a href="#janelas-críticas-de-semeadura-o-modelo-dinâmico-e-o-dossel-foliar" id="toc-janelas-críticas-de-semeadura-o-modelo-dinâmico-e-o-dossel-foliar" class="nav-link" data-scroll-target="#janelas-críticas-de-semeadura-o-modelo-dinâmico-e-o-dossel-foliar"><span class="header-section-number">3.2</span> Janelas Críticas de Semeadura (O Modelo Dinâmico e o Dossel Foliar)</a></li>
+  <li><a href="#estimativa-de-severidade-modelo-empírico-e-adaptação-macrorregional" id="toc-estimativa-de-severidade-modelo-empírico-e-adaptação-macrorregional" class="nav-link" data-scroll-target="#estimativa-de-severidade-modelo-empírico-e-adaptação-macrorregional"><span class="header-section-number">3.3</span> Estimativa de Severidade (Modelo Empírico e Adaptação Macrorregional)</a></li>
+  <li><a href="#estimativa-de-perdas-e-o-score-de-vulnerabilidade" id="toc-estimativa-de-perdas-e-o-score-de-vulnerabilidade" class="nav-link" data-scroll-target="#estimativa-de-perdas-e-o-score-de-vulnerabilidade"><span class="header-section-number">3.4</span> Estimativa de Perdas e o Score de Vulnerabilidade</a></li>
   </ul></li>
   <li><a href="#resultados-e-interpretação" id="toc-resultados-e-interpretação" class="nav-link" data-scroll-target="#resultados-e-interpretação"><span class="header-section-number">4</span> Resultados e Interpretação</a></li>
   <li><a href="#limitações-do-estudo" id="toc-limitações-do-estudo" class="nav-link" data-scroll-target="#limitações-do-estudo"><span class="header-section-number">5</span> Limitações do Estudo</a></li>
@@ -2350,7 +2350,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Data de Publicação</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">3 de junho de 2026</p>
+      <p class="date">Invalid Date</p>
     </div>
   </div>
   
@@ -2366,62 +2366,64 @@ window.Quarto = {
 <h1 data-number="1"><span class="header-section-number">1</span> Introdução e Descrição do Problema</h1>
 <p>A Ferrugem Asiática da Soja (FAS), causada pelo fungo <em>Phakopsora pachyrhizi</em>, é a doença mais severa da cultura da soja no Brasil. No estado do Rio Grande do Sul (RS), as variações climáticas interanuais — especialmente os volumes de precipitação durante os meses de verão — ditam a intensidade das epidemias.</p>
 <p>Historicamente, o mercado segurador utiliza mapas de risco estáticos baseados em médias climáticas ou janelas fixas. O grande problema desta abordagem é a <strong>ausência de adaptação fenológica</strong>: se a falta de chuvas de primavera força o produtor gaúcho a atrasar a semeadura, a janela crítica de fechamento do dossel (quando a planta se torna altamente vulnerável) é deslocada.</p>
-<p>Para resolver este problema de assimetria de informações, este projeto propõe o desenvolvimento de um <strong>Simulador Dinâmico de Risco</strong>. Através de modelagem matemática e integração de APIs, a ferramenta permite recalcular instantaneamente o risco epidemiológico e o impacto financeiro com base no calendário de plantio real adotado em cada município.</p>
+<p>Para resolver este problema de assimetria de informações, este projeto propõe o desenvolvimento de um <strong>Simulador Dinâmico de Risco</strong>. Através de modelagem matemática e integração de bases de dados, a ferramenta permite recalcular instantaneamente o risco epidemiológico e o impacto financeiro com base no calendário de plantio real adotado em cada município.</p>
 </section>
 <section id="dados-utilizados" class="level1" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> Dados Utilizados</h1>
 <p>A construção da modelagem pautou-se exclusivamente em fontes de dados públicas, gratuitas e auditáveis, garantindo a total reprodutibilidade do estudo:</p>
-<ol type="1">
+<ul>
 <li><strong>Dados Agronômicos e Produtivos (IBGE/SIDRA):</strong> Extração da série histórica (2019-2023) de rendimento médio (kg/ha) e quantidade produzida (toneladas) da soja para os 497 municípios do RS (Tabela 5457).</li>
 <li><strong>Dados Climáticos Diários (NASA POWER):</strong> Variável de precipitação diária ajustada (<code>PRECTOTCORR</code>) extraída via coordenadas geográficas entre novembro de 2024 e março de 2025.</li>
 <li><strong>Malha Geográfica (IPEA/geobr):</strong> Geometrias municipais do RS para o cruzamento espacial (<em>Spatial Join</em>) e renderização do painel interativo.</li>
-</ol>
+</ul>
 </section>
 <section id="metodologia-científica" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Metodologia Científica</h1>
 <p>A arquitetura do modelo seguiu o fluxo de processamento de dados preconizado pela literatura de fitopatologia e pelas diretrizes metodológicas do comitê avaliador.</p>
 <section id="modelagem-produtiva-e-regra-de-pareto" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="modelagem-produtiva-e-regra-de-pareto"><span class="header-section-number">3.1</span> Modelagem Produtiva e Regra de Pareto</h2>
-<p>Para evitar o enviesamento do risco em municípios de baixa relevância agrícola, definiu-se a <strong>Produtividade Atingível (<span class="math inline">\(Y_{max}\)</span>)</strong> como o rendimento máximo registrado nos últimos cinco anos em cada município. Simultaneamente, aplicou-se o Princípio de Pareto baseado na produção média acumulada (toneladas). Isso permite ao tomador de decisão focar a análise na parcela de municípios responsáveis por até 100% da produção estadual de forma escalonada.</p>
+<p>Para evitar o enviesamento do risco em municípios de baixa relevância agrícola, definiu-se a Produtividade Atingível (<span class="math inline">\(Y_{max}\)</span>) como o rendimento máximo registrado nos últimos cinco anos em cada município. Simultaneamente, aplicou-se o Princípio de Pareto baseado na produção média acumulada (toneladas). Isso permite ao tomador de decisão focar a análise na parcela de municípios responsáveis por até 100% da produção estadual de forma escalonada.</p>
 </section>
-<section id="janelas-críticas-de-semeadura-o-modelo-dinâmico" class="level2" data-number="3.2">
-<h2 data-number="3.2" class="anchored" data-anchor-id="janelas-críticas-de-semeadura-o-modelo-dinâmico"><span class="header-section-number">3.2</span> Janelas Críticas de Semeadura (O Modelo Dinâmico)</h2>
-<p>A precipitação acumulada (<span class="math inline">\(P_{acc}\)</span>) foi calculada não de forma estática, mas dividida em três cenários fenológicos de janela crítica (períodos de 90 dias centrados no enchimento de grãos): * <strong>Semeadura Precoce:</strong> <span class="math inline">\(P_{acc}\)</span> de Novembro, Dezembro e Janeiro. * <strong>Semeadura Normal:</strong> <span class="math inline">\(P_{acc}\)</span> de Dezembro, Janeiro e Fevereiro. * <strong>Semeadura Tardia:</strong> <span class="math inline">\(P_{acc}\)</span> de Janeiro, Fevereiro e Março.</p>
+<section id="janelas-críticas-de-semeadura-o-modelo-dinâmico-e-o-dossel-foliar" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="janelas-críticas-de-semeadura-o-modelo-dinâmico-e-o-dossel-foliar"><span class="header-section-number">3.2</span> Janelas Críticas de Semeadura (O Modelo Dinâmico e o Dossel Foliar)</h2>
+<p>Diferente de abordagens estáticas, a precipitação acumulada (<span class="math inline">\(P_{acc}\)</span>) foi restrita a <strong>janelas críticas de 45 dias</strong>. Metodologicamente, assumiu-se que o acúmulo hídrico só possui relevância epidemiológica após o fechamento do dossel da cultura (aproximadamente 30 dias após a semeadura). É neste momento que se estabelece o microclima ideal de sombreamento e alta umidade, indispensável para a germinação dos esporos do patógeno.</p>
+<p>Foram definidos três cenários fenológicos baseados em diferentes datas de plantio e suas respectivas janelas de 45 dias de dossel fechado: * <strong>Semeadura Precoce (Plantio em 01/Outubro):</strong> Acúmulo pluviométrico de 01/Novembro a 15/Dezembro. * <strong>Semeadura Normal (Plantio em 01/Novembro):</strong> Acúmulo pluviométrico de 01/Dezembro a 14/Janeiro. * <strong>Semeadura Tardia (Plantio em 01/Dezembro):</strong> Acúmulo pluviométrico de 31/Dezembro a 13/Fevereiro.</p>
 </section>
-<section id="estimativa-de-severidade-modelo-empírico" class="level2" data-number="3.3">
-<h2 data-number="3.3" class="anchored" data-anchor-id="estimativa-de-severidade-modelo-empírico"><span class="header-section-number">3.3</span> Estimativa de Severidade (Modelo Empírico)</h2>
-<p>A estimativa da severidade da doença na lavoura baseou-se nos modelos empíricos de precipitação propostos por Del Ponte et al. (2006). Especificamente, adotou-se o modelo de regressão não-linear (quadrático) ajustado para correlacionar o acúmulo hídrico (<span class="math inline">\(P_{acc}\)</span> em mm) com a evolução da epidemia, cujos coeficientes de regressão foram extraídos da <strong>Tabela 3 (modelo BR3)</strong> do referido estudo. A severidade percentual (<span class="math inline">\(S\)</span>) foi modelada pela seguinte equação:</p>
+<section id="estimativa-de-severidade-modelo-empírico-e-adaptação-macrorregional" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="estimativa-de-severidade-modelo-empírico-e-adaptação-macrorregional"><span class="header-section-number">3.3</span> Estimativa de Severidade (Modelo Empírico e Adaptação Macrorregional)</h2>
+<p>A estimativa da severidade da doença na lavoura baseou-se nos modelos empíricos de precipitação propostos por Del Ponte et al. (2006). Adotou-se o modelo de regressão não-linear (quadrático), cujos coeficientes foram extraídos da <strong>Tabela 3 (modelo BR3)</strong> do referido estudo. A severidade percentual (<span class="math inline">\(S\)</span>) foi modelada pela seguinte equação:</p>
 <p><span class="math display">\[S = -3.3983 + 0.3777 \cdot P_{acc} - 0.0003 \cdot P_{acc}^2\]</span></p>
-<p>Foi implementada uma trava computacional no algoritmo para garantir que a severidade estimada obedeça rigorosamente aos limites biológicos (<span class="math inline">\(0 \le S \le 100\%\)</span>).</p>
+<p><strong>Fundamentação da adaptação da janela temporal:</strong> O modelo original de Del Ponte foi calibrado observando a precipitação acumulada de 30 dias imediatamente após a detecção inicial da doença no talhão. Como a modelagem macrorregional preditiva inviabiliza a identificação do exato “dia zero” de infecção para todos os 497 municípios, a adoção da janela estendida de 45 dias operou como um ajuste técnico essencial (<em>proxy</em> epidemiológico). Isso evita o acúmulo excessivo de precipitação (que causaria distorções e superestimativas severas devido à natureza quadrática e côncava da equação) e concentra o risco estritamente na fase de maior vulnerabilidade fisiológica da planta.</p>
+<p>Foi implementada uma trava computacional no algoritmo para garantir que a severidade estimada obedeça rigorosamente aos limites biológicos absolutos (<span class="math inline">\(0 \le S \le 100\)</span>).</p>
 </section>
 <section id="estimativa-de-perdas-e-o-score-de-vulnerabilidade" class="level2" data-number="3.4">
-<h2 data-number="3.4" class="anchored" data-anchor-id="estimativa-de-perdas-e-o-score-de-vulnerabilidade"><span class="header-section-number">3.4</span> Estimativa de Perdas e O Score de Vulnerabilidade</h2>
-<p>De posse da severidade, calculou-se a estimativa de perda produtiva. Adotou-se o coeficiente de dano consagrado na literatura de 0,6% (0.006) de redução de produtividade para cada 1% de aumento na severidade da FAS (Danial et al., 2007; Dalla Lana et al., 2015). A perda potencial (<span class="math inline">\(P_{perda}\)</span> em kg/ha) é dada por:</p>
+<h2 data-number="3.4" class="anchored" data-anchor-id="estimativa-de-perdas-e-o-score-de-vulnerabilidade"><span class="header-section-number">3.4</span> Estimativa de Perdas e o Score de Vulnerabilidade</h2>
+<p>De posse da severidade, calculou-se a estimativa de perda produtiva. Adotou-se o coeficiente de dano consagrado na literatura agronômica de 0,6% de redução de produtividade para cada 1% de aumento na severidade da FAS, validado por meta-análises de abrangência nacional (Danial et al., 2007; Dalla Lana et al., 2015). A perda potencial (<span class="math inline">\(P_{perda}\)</span> em kg/ha) é dada por:</p>
 <p><span class="math display">\[P_{perda} = S \times 0.006 \times Y_{max}\]</span></p>
-<p>Onde <strong><span class="math inline">\(Y_{max}\)</span></strong> representa a Produtividade Atingível (o rendimento máximo histórico do município nos últimos cinco anos, conforme definido no item 3.1).</p>
-<p>Para integrar Risco Epidemiológico e Importância Econômica, definiu-se a <strong>Vulnerabilidade Bruta (<span class="math inline">\(V_{b}\)</span>)</strong> através do produto: Risco Relativo <span class="math inline">\(\times\)</span> Produção Média <span class="math inline">\(\times\)</span> Perda Potencial. Neste cálculo, definiu-se o <strong>Risco Relativo</strong> como a própria severidade (<span class="math inline">\(S\)</span>) convertida para uma escala decimal de proporção (isto é, <span class="math inline">\(S / 100\)</span>, variando de 0 a 1).</p>
-<p>Para viabilizar a interpretação gerencial por parte da seguradora, a vulnerabilidade bruta (<span class="math inline">\(V_{b}\)</span>) foi submetida a uma normalização estatística Min-Max:</p>
+<p>Onde <span class="math inline">\(Y_{max}\)</span> representa a Produtividade Atingível definida na seção 3.1.</p>
+<p>Para integrar Risco Epidemiológico e Importância Econômica, definiu-se a Vulnerabilidade Bruta (<span class="math inline">\(V_{b}\)</span>) através do produto: Risco Relativo <span class="math inline">\(\times\)</span> Produção Média <span class="math inline">\(\times\)</span> Perda Potencial. Neste cálculo, o <strong>Risco Relativo</strong> é a proporção decimal da severidade (variando de 0 a 1).</p>
+<p>Para viabilizar a interpretação gerencial por parte da seguradora, a vulnerabilidade bruta foi submetida a uma normalização estatística Min-Max, originando o Score final:</p>
 <p><span class="math display">\[Score = \left( \frac{V_{b} - V_{b(min)}}{V_{b(max)} - V_{b(min)}} \right) \times 100\]</span></p>
 </section>
 </section>
 <section id="resultados-e-interpretação" class="level1" data-number="4">
 <h1 data-number="4"><span class="header-section-number">4</span> Resultados e Interpretação</h1>
 <p>O resultado final foi empacotado em um aplicativo interativo construído em <code>R/Shiny</code>. A interpretação dos resultados ocorre de forma visual e analítica:</p>
-<ol type="1">
-<li><strong>Score de Vulnerabilidade (0 a 100):</strong> Funciona como um “termômetro de risco”. Municípios com Score próximo a 100 possuem simultaneamente altíssima propensão climática ao desenvolvimento do fungo e representam um volume financeiro alto para a carteira estadual.</li>
-<li><strong>Dinâmica Espacial Temporal:</strong> Ao alterar o cenário de plantio no aplicativo, observa-se a migração das manchas de risco no mapa. Um município que apresenta Score alto na “Semeadura Precoce” pode ter seu risco mitigado na “Semeadura Tardia” devido à fuga do período de maior precipitação histórica.</li>
-</ol>
+<ul>
+<li><strong>Score de Vulnerabilidade (0 a 100):</strong> Funciona como um “termômetro de risco atuarial”. Municípios com Score próximo a 100 possuem simultaneamente altíssima propensão climática ao desenvolvimento do fungo e representam um alto volume financeiro em risco para a carteira estadual.</li>
+<li><strong>Dinâmica Espacial Temporal:</strong> Ao alterar o cenário de plantio no aplicativo, observa-se a migração das manchas de risco no mapa. O modelo prova o conceito agronômico de “escape fenológico”, demonstrando matematicamente como um município de alto risco pode ter sua severidade mitigada se o plantio for deslocado para fora da janela de alta umidade.</li>
+</ul>
 </section>
 <section id="limitações-do-estudo" class="level1" data-number="5">
 <h1 data-number="5"><span class="header-section-number">5</span> Limitações do Estudo</h1>
-<p>Apesar do alto rigor estatístico, o modelo possui limitações inerentes à modelagem macrorregional: * <strong>Manejo e Tecnologia:</strong> O modelo assume um padrão homogêneo de (ausência de) controle químico. Não há inputs dinâmicos sobre a eficácia de fungicidas ou adoção de cultivares resistentes na região. O modelo reflete, portanto, o risco ambiental puro da localidade. * <strong>Microclimas e Outras Variáveis:</strong> A métrica baseia-se fortemente na precipitação. Variáveis complementares indispensáveis à biologia do fungo, como molhamento foliar noturno (orvalho), temperatura média do ar e umidade relativa não foram inseridas nesta versão do algoritmo, assumindo-se que a chuva acumulada atue como <em>proxy</em> para a favorabilidade ambiental em larga escala.</p>
+<p>Apesar do alto rigor estatístico, o modelo possui limitações metodológicas inerentes à sua escala: * <strong>Manejo e Tecnologia (Risco Inerente):</strong> O modelo assume um padrão homogêneo de controle. Não há <em>inputs</em> dinâmicos sobre o nível de tecnificação do produtor, pontualidade nas aplicações de fungicidas ou uso de cultivares com genes de tolerância. O modelo entrega o <strong>risco ambiental primário (puro)</strong>, ideal para compor a precificação-base de apólices antes dos fatores redutores de mitigação. * <strong>Microclimas e Proxy Climático:</strong> A métrica isola a precipitação como preditora primária. Variáveis como molhamento foliar induzido por orvalho e a viabilidade térmica do esporo não foram embutidas nesta versão, em conformidade com o referencial teórico que valida a chuva como <em>proxy</em> soberana para a epidemia em macroescala.</p>
 </section>
 <section id="recomendações-e-tomada-de-decisão" class="level1" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> Recomendações e Tomada de Decisão</h1>
-<p>Recomenda-se a incorporação desta modelagem dinâmica diretamente nos sistemas de precificação e auditoria das seguradoras. O painel interativo fornece as seguintes vantagens estratégicas:</p>
+<p>Recomenda-se a incorporação desta modelagem dinâmica diretamente nos sistemas de precificação e auditoria de sinistros de grandes seguradoras. O painel fornece vantagens estratégicas:</p>
 <ul>
-<li><strong>Auditoria de Sinistros:</strong> A seguradora pode cruzar a data real de plantio do segurado com o respectivo cenário no dashboard, verificando se a alegação de perda por ferrugem coincide com o risco estimado daquela época específica.</li>
-<li><strong>Gestão de Carteira:</strong> O filtro de Pareto permite que gerentes de risco isolem imediatamente o <em>Top 20%</em> dos municípios responsáveis por 80% da exposição financeira ao risco, alocando vistorias de campo preventivas de forma inteligente.</li>
+<li><strong>Avaliação Ex-ante (Precificação):</strong> Substituindo os dados climáticos passados por modelos de previsão sazonal (NOAA/INMET), a seguradora pode rodar o simulador antes da safra iniciar, ajustando o prêmio da apólice com base na expectativa de El Niño/La Niña.</li>
+<li><strong>Auditoria de Sinistros (Ex-post):</strong> A ferramenta permite cruzar a data real de plantio informada pelo segurado no ZARC com o cenário climático exato vivenciado pelo talhão. Alegações de perda total podem ser auditadas cruzando-se a severidade calculada pelo algoritmo com as perdas reportadas.</li>
 </ul>
 </section>
 <section id="referências-bibliográficas" class="level1" data-number="7">
